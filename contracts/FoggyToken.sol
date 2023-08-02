@@ -2,20 +2,20 @@
 
 pragma solidity >=0.8.7;
 
-/*Foggy contract is an erc20 token contract. We will use foggy token to reward stakers
+/*FoggyToken contract is an erc20 token contract. We will use FoggyToken to reward stakers
 and to charge transaction service receivers. People who want to use FoggyBank for anonymous 
-transaction will need to pay fees in Foggy token. */
+transaction will need to pay fees in FoggyToken. */
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Foggy is Ownable, ERC20Capped {
+contract FoggyToken is Ownable, ERC20Capped {
     event TokenMinted(address minter, uint amount);
     event TokenBurned(address burner, uint amount);
 
-    constructor(uint _cap) ERC20("Foggy", "FOGGY") ERC20Capped(_cap*(10**18)) {
+    constructor(uint _cap) ERC20("FoggyToken", "FOGGY") ERC20Capped(_cap*(10**18)) {
     }
 
     error StatusError(string message);

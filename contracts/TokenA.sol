@@ -1,71 +1,70 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity >= 0.8.7;
+pragma solidity >=0.8.7;
+
+/*TokenA contract is an erc20 token contract. We will use TokenA as our pool token. In reality, 
+this can be WETH, WBTC, WBNB or any other token. People will deposit their TokenA into the FoggyBank
+anonymously and later they will withdraw anonymously. */
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TokenA is ERC20Capped {
-
-    //Token burning and minting events
+contract TokenA is Ownable, ERC20Capped {
     event TokenMinted(address minter, uint amount);
     event TokenBurned(address burner, uint amount);
 
-    //setting owner and related code
-    address public owner;
-    error NotOwner(address caller, string message);
-    modifier onlyOwner() {
-        if(msg.sender != owner) {
-            revert NotOwner(msg.sender, "you are not owner");
+    constructor(uint _cap) ERC20("TokenA", "TOKA") ERC20Capped(_cap*(10**18)) {
+    }
+
+    error StatusError(string message);
+    bool public contractStatus = true;
+    modifier isEnabled() {
+        if(contractStatus == false) {
+            revert StatusError("Contract is disabled, contact owner to enable it again");
         }
         _;
     }
-    function transferOwner(address _newOwner) external onlyOwner {
-        require(_newOwner != address(0), "not valid address");
-        owner = _newOwner;
+    function toggleContractStatus() external onlyOwner {
+        contractStatus = !contractStatus;
     }
 
-    //creating token
-    constructor(uint cap) ERC20("TokenA", "TOKA") ERC20Capped(cap*(10**18)) {
-        owner = msg.sender;
-    }
-
-    //minting function for owner
-    function mintToken(uint _amount) external onlyOwner {
-        require(_amount > 0 && _amount < 100000, "mint between 0 and 100000");
+    //minting function for owner, decimals handled inside the function, 10000 is arbitrary
+    function mintOwner(uint _amount) external onlyOwner isEnabled {
+        require(_amount > 0 && _amount < 1000000, "mint between 0 and 10000");
         _mint(msg.sender, _amount*(10**18));
         emit TokenMinted(msg.sender, _amount);
     }
 
-    //minting function for generals
-    function mintTokenGenerals(uint _amount) external  {
-        require(_amount > 0 && _amount < 500, "mint between 0 and 500");
+    //free minting will be allowed to public for testing the platform, decimals handled, 50 is arbitrary
+    function mintGenerals(uint _amount) external isEnabled {
+        require(_amount > 0 && _amount < 50, "mint between 0 and 50");
         _mint(msg.sender, _amount*(10**18));
         emit TokenMinted(msg.sender, _amount);
     }
 
     //burning token function, no need set a higher limit
-    function burnToken(uint _amount) external {
+    function burnToken(uint _amount) external isEnabled {
         require(_amount > 0, "burn amount must be greater than 0");
         _burn(msg.sender, _amount*(10**18));
         emit TokenBurned(msg.sender, _amount);
     }
 
-    //approve swap contract before sending tokens to it for liquidity
-    function approveCoinFog(address _coinFogContract, uint _amount) external {
+    //approve FoggyBank contract before sending tokens to it for anonymous transaction pool
+    function approveFoggyBank(address _contractFoggyBank, uint _amount) external isEnabled {
         require(_amount > 0, "approve amount must be greater than 0");
         uint amount = _amount*(10**18);
-        _approve(msg.sender, _coinFogContract, amount);
+        _approve(msg.sender, _contractFoggyBank, amount);
     }
 
-    //general view functions, you can understand what they do from names
-    function getTotalSupply() external view returns(uint) {
-        return totalSupply() / (10**18);
+    function returnOwner() external view returns(address) {
+        return owner();
     }
 
     function getContractAddress() external view returns(address) {
         return address(this);
-    } 
+    }
 
     function getYourBalance() external view returns(uint) {
         return balanceOf(msg.sender) / (10**18);
@@ -75,4 +74,7 @@ contract TokenA is ERC20Capped {
         return balanceOf(address(this)) / (10**18);
     }
 
+    function getTotalSupply() external view returns(uint) {
+        return totalSupply() / (10**18);
+    }
 }
