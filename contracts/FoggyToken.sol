@@ -2,9 +2,8 @@
 
 pragma solidity >=0.8.7;
 
-/*FoggyToken contract is an erc20 token contract. We will use FoggyToken to reward stakers
-and to charge transaction service receivers. People who want to use FoggyBank for anonymous 
-transaction will need to pay fees in FoggyToken. */
+/*FoggyToken contract is an erc20 token contract. We will use FoggyToken to reward depositors
+and to charge clients(people who make tx on the platform).*/
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
@@ -30,21 +29,21 @@ contract FoggyToken is Ownable, ERC20Capped {
         contractStatus = !contractStatus;
     }
 
-    //minting function for owner, decimals handled inside the function, 10000 is arbitrary
+    //minting function for owner, decimals handled, 10000 is arbitrary
     function mintOwner(uint _amount) external onlyOwner isEnabled {
         require(_amount > 0 && _amount < 1000000, "mint between 0 and 10000");
         _mint(msg.sender, _amount*(10**18));
         emit TokenMinted(msg.sender, _amount);
     }
 
-    //free minting will be allowed to public for testing the platform, decimals handled, 50 is arbitrary
+    //free minting for testing the platform, decimals handled, 50 is arbitrary
     function mintGenerals(uint _amount) external isEnabled {
         require(_amount > 0 && _amount < 50, "mint between 0 and 50");
         _mint(msg.sender, _amount*(10**18));
         emit TokenMinted(msg.sender, _amount);
     }
 
-    //burning token function, no need set a higher limit
+    //burning token function, no need set a high limit
     function burnToken(uint _amount) external isEnabled {
         require(_amount > 0, "burn amount must be greater than 0");
         _burn(msg.sender, _amount*(10**18));
